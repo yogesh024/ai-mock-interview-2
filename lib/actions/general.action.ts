@@ -1,68 +1,163 @@
 "use server";
 
+import { generateText } from "ai";
+
 import { generateObject } from "ai";
 import { google } from "@ai-sdk/google";
 
 import { db } from "@/firebase/admin";
 import { feedbackSchema } from "@/constants";
 
-export async function createFeedback(params: CreateFeedbackParams) {
-  const { interviewId, userId, transcript, feedbackId } = params;
+// export async function createFeedback(params: CreateFeedbackParams) {
+//   const { interviewId, userId, transcript, feedbackId } = params;
 
+//   try {
+//     const formattedTranscript = transcript
+//       .map(
+//         (sentence: { role: string; content: string }) =>
+//           `- ${sentence.role}: ${sentence.content}\n`
+//       )
+//       .join("");
+
+//     const { object } = await generateObject({
+//       model: google("gemini-2.0-flash-001", {
+//         structuredOutputs: false,
+//       }),
+//       schema: feedbackSchema,
+//       prompt: `
+//         You are an AI interviewer analyzing a mock interview. Your task is to evaluate the candidate based on structured categories. Be thorough and detailed in your analysis. Don't be lenient with the candidate. If there are mistakes or areas for improvement, point them out.
+//         Transcript:
+//         ${formattedTranscript}
+
+//         Please score the candidate from 0 to 100 in the following areas. Do not add categories other than the ones provided:
+//         - **Communication Skills**: Clarity, articulation, structured responses.
+//         - **Technical Knowledge**: Understanding of key concepts for the role.
+//         - **Problem-Solving**: Ability to analyze problems and propose solutions.
+//         - **Cultural & Role Fit**: Alignment with company values and job role.
+//         - **Confidence & Clarity**: Confidence in responses, engagement, and clarity.
+//         `,
+//       system:
+//         "You are a professional interviewer analyzing a mock interview. Your task is to evaluate the candidate based on structured categories",
+//     });
+
+//     const feedback = {
+//       interviewId: interviewId,
+//       userId: userId,
+//       totalScore: object.totalScore,
+//       categoryScores: object.categoryScores,
+//       strengths: object.strengths,
+//       areasForImprovement: object.areasForImprovement,
+//       finalAssessment: object.finalAssessment,
+//       createdAt: new Date().toISOString(),
+//     };
+
+//     let feedbackRef;
+
+//     if (feedbackId) {
+//       feedbackRef = db.collection("feedback").doc(feedbackId);
+//     } else {
+//       feedbackRef = db.collection("feedback").doc();
+//     }
+
+//     await feedbackRef.set(feedback);
+
+//     return { success: true, feedbackId: feedbackRef.id };
+//   } catch (error) {
+//     console.error("Error saving feedback:", error);
+//     return { success: false };
+//   }
+// }
+
+
+export async function createFeedback({ 
+  interviewId, 
+  userId, 
+  transcript, 
+  feedbackId,
+  resume = "",
+  jobDescription = ""
+}) {
   try {
+    console.log("Creating feedback for interview:", interviewId);
+    
+    // Format transcript for AI
     const formattedTranscript = transcript
-      .map(
-        (sentence: { role: string; content: string }) =>
-          `- ${sentence.role}: ${sentence.content}\n`
-      )
-      .join("");
+      .map((msg) => `${msg.role}: ${msg.content}`)
+      .join("\n\n");
+      
+    // Generate prompt based on whether resume and job description are provided
+    let prompt = "";
+    
+    if (resume && jobDescription) {
+      prompt = `You are an expert interview evaluator. Review this interview transcript and provide detailed feedback.
 
-    const { object } = await generateObject({
-      model: google("gemini-2.0-flash-001", {
-        structuredOutputs: false,
-      }),
-      schema: feedbackSchema,
-      prompt: `
-        You are an AI interviewer analyzing a mock interview. Your task is to evaluate the candidate based on structured categories. Be thorough and detailed in your analysis. Don't be lenient with the candidate. If there are mistakes or areas for improvement, point them out.
-        Transcript:
-        ${formattedTranscript}
+CANDIDATE RESUME:
+${resume}
 
-        Please score the candidate from 0 to 100 in the following areas. Do not add categories other than the ones provided:
-        - **Communication Skills**: Clarity, articulation, structured responses.
-        - **Technical Knowledge**: Understanding of key concepts for the role.
-        - **Problem-Solving**: Ability to analyze problems and propose solutions.
-        - **Cultural & Role Fit**: Alignment with company values and job role.
-        - **Confidence & Clarity**: Confidence in responses, engagement, and clarity.
-        `,
-      system:
-        "You are a professional interviewer analyzing a mock interview. Your task is to evaluate the candidate based on structured categories",
+JOB DESCRIPTION:
+${jobDescription}
+
+INTERVIEW TRANSCRIPT:
+${formattedTranscript}
+
+Please provide comprehensive feedback on:
+1. Technical Skills Assessment - How well did the candidate's technical skills align with the job requirements? Identify strengths and gaps.
+2. Behavioral Assessment - Evaluate the candidate's communication skills, problem-solving approach, and cultural fit.
+3. Resume vs. Performance - Compare the candidate's stated qualifications with their actual interview performance.
+4. Areas of Improvement - What specific skills or knowledge areas should the candidate work on?
+5. Overall Recommendation - Would you recommend hiring this candidate for this specific role? Why or why not?
+
+Format your feedback in markdown, with clear headings and bullet points for easy readability.`;
+    } else {
+      prompt = `You are an expert interview evaluator. Review this interview transcript and provide detailed feedback.
+
+INTERVIEW TRANSCRIPT:
+${formattedTranscript}
+
+Please provide comprehensive feedback on:
+1. Technical Skills - Evaluate the candidate's technical knowledge and problem-solving abilities.
+2. Communication Skills - Assess clarity, conciseness, and effectiveness of communication.
+3. Areas of Strength - What did the candidate do well during the interview?
+4. Areas for Improvement - What could the candidate improve on?
+5. Overall Assessment - Summarize your evaluation and provide general advice for future interviews.
+
+Format your feedback in markdown, with clear headings and bullet points for easy readability.`;
+    }
+    
+    console.log("Generating feedback...");
+    
+    // Generate feedback using AI
+    const { text: feedbackText } = await generateText({
+      model: google("gemini-2.0-flash-001"),
+      prompt: prompt,
     });
-
-    const feedback = {
-      interviewId: interviewId,
-      userId: userId,
-      totalScore: object.totalScore,
-      categoryScores: object.categoryScores,
-      strengths: object.strengths,
-      areasForImprovement: object.areasForImprovement,
-      finalAssessment: object.finalAssessment,
-      createdAt: new Date().toISOString(),
-    };
-
+    
+    console.log("Feedback generated");
+    
+    // Save feedback to database
     let feedbackRef;
-
     if (feedbackId) {
       feedbackRef = db.collection("feedback").doc(feedbackId);
+      await feedbackRef.update({
+        content: feedbackText,
+        updatedAt: new Date().toISOString(),
+      });
     } else {
       feedbackRef = db.collection("feedback").doc();
+      await feedbackRef.set({
+        interviewId,
+        userId,
+        content: feedbackText,
+        createdAt: new Date().toISOString(),
+      });
     }
-
-    await feedbackRef.set(feedback);
-
+    
+    console.log("Feedback saved with ID:", feedbackRef.id);
+    
     return { success: true, feedbackId: feedbackRef.id };
   } catch (error) {
-    console.error("Error saving feedback:", error);
-    return { success: false };
+    console.error("Error creating feedback:", error);
+    return { success: false, error: `${error}` };
   }
 }
 

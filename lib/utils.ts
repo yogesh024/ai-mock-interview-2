@@ -22,7 +22,12 @@ const checkIconExists = async (url: string) => {
   }
 };
 
-export const getTechLogos = async (techArray: string[]) => {
+export const getTechLogos = async (techArray: string[] | undefined) => {
+  // Check if techArray is undefined or empty
+  if (!techArray || techArray.length === 0) {
+    return []; // Return empty array to prevent mapping errors
+  }
+  
   const logoURLs = techArray.map((tech) => {
     const normalized = normalizeTechName(tech);
     return {
@@ -45,3 +50,4 @@ export const getRandomInterviewCover = () => {
   const randomIndex = Math.floor(Math.random() * interviewCovers.length);
   return `/covers${interviewCovers[randomIndex]}`;
 };
+
