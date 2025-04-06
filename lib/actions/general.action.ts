@@ -5,8 +5,10 @@ import { generateText } from "ai";
 import { generateObject } from "ai";
 import { google } from "@ai-sdk/google";
 
-import { db } from "@/firebase/admin";
+import { db,auth } from "@/firebase/admin";
 import { feedbackSchema } from "@/constants";
+import { cookies } from "next/headers";
+
 
 // export async function createFeedback(params: CreateFeedbackParams) {
 //   const { interviewId, userId, transcript, feedbackId } = params;
@@ -67,7 +69,24 @@ import { feedbackSchema } from "@/constants";
 //     return { success: false };
 //   }
 // }
-
+async function verifyAuth() {
+  try {
+    // Get cookie inside the function when it's called
+    const cookiesObj = await cookies();
+    const sessionCookie = cookiesObj.get('session')?.value;
+    
+    if (!sessionCookie) {
+      throw new Error("No authentication session found");
+    }
+    
+    // Verify session cookie with Firebase Admin
+    const decodedClaim = await auth.verifySessionCookie(sessionCookie, true);
+    return decodedClaim.uid;
+  } catch (error) {
+    console.error("Authentication verification failed:", error);
+    throw new Error("Unauthorized: Authentication required");
+  }
+}
 
 export async function createFeedback({ 
   interviewId, 
@@ -217,4 +236,61 @@ export async function getInterviewsByUserId(
     id: doc.id,
     ...doc.data(),
   })) as Interview[];
+}
+
+export async function getResumeInterviewsByUserId(userId: string) {
+  try {
+    // Verify authentication
+    const authenticatedUserId = await verifyAuth();
+    
+    // Ensure the user is requesting their own interviews
+    if (userId !== authenticatedUserId) {
+      throw new Error("Unauthorized: You can only access your own interviews");
+    }
+    
+    // Query for resume-based interviews (isCustom: true) for this user
+    const interviews = await db
+      .collection("interviews")
+      .where("userId", "==", authenticatedUserId)
+      .where("isCustom", "==", true)
+      .orderBy("createdAt", "desc")
+      .get();
+
+    return interviews.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+  } catch (error) {
+    console.error("Error getting resume-based interviews:", error);
+    throw error;
+  }
+}
+
+// Also get standard interviews (non-resume based)
+export async function getStandardInterviewsByUserId(userId:string) {
+  try {
+    // Verify authentication
+    const authenticatedUserId = await verifyAuth();
+    
+    // Ensure the user is requesting their own interviews
+    if (userId !== authenticatedUserId) {
+      throw new Error("Unauthorized: You can only access your own interviews");
+    }
+    
+    // Query for standard interviews (isCustom: false or not set)
+    const interviews = await db
+      .collection("interviews")
+      .where("userId", "==", authenticatedUserId)
+      .where("isCustom", "==", false)
+      .orderBy("createdAt", "desc")
+      .get();
+
+    return interviews.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+  } catch (error) {
+    console.error("Error getting standard interviews:", error);
+    throw error;
+  }
 }
