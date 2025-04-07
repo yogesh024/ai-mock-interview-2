@@ -60,7 +60,7 @@ Return ONLY the JSON array with no explanation or additional text.`,
       console.log("Raw questions text:", questionsText);
       
       // Attempt to extract array from text if JSON parse failed
-      const match = questionsText.match(/\[(.*)\]/s);
+      const match = questionsText.match(/\[(.*)\]/);
       if (match) {
         try {
           questions = JSON.parse(`[${match[1]}]`);

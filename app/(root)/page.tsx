@@ -108,13 +108,14 @@ import {
   getStandardInterviewsByUserId,
   getResumeInterviewsByUserId,
   getLatestInterviews,
+  getInterviewsByUserId
 } from "@/lib/actions/general.action";
 
 async function Home() {
   const user = await getCurrentUser();
 
   const [standardInterviews, resumeInterviews, allInterview] = await Promise.all([
-    getStandardInterviewsByUserId(user?.id!),
+    getInterviewsByUserId(user?.id!),
     getResumeInterviewsByUserId(user?.id!),
     getLatestInterviews({ userId: user?.id! }),
   ]);

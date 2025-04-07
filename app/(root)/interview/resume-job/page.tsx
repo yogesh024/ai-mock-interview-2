@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import ResumeJobInterviewForm from '@/components/ResumeJobInterviewForm';
-import { Button } from '@/components/ui/button';
+import { getCurrentUser } from '@/lib/actions/auth.action';
 // import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
 interface ResumeJobInterviewData {
@@ -14,12 +14,32 @@ interface ResumeJobInterviewData {
   interviewType: 'behavioral' | 'technical' | 'mixed';
 }
 
-export default function ResumeJobInterviewPage() {
-  const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+interface User {
+  id: string;
+  name: string;
+}
 
-  const handleStartInterview = async (data: ResumeJobInterviewData) => {
+export default function ResumeJobInterviewPage(): JSX.Element {
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  
+  useEffect(() => {
+    async function fetchUser() {
+      try {
+        const userData = await getCurrentUser();
+        setUser(userData);
+      } catch (err) {
+        console.error('Error fetching user:', err);
+        setError('Failed to load user data');
+      }
+    }
+    
+    fetchUser();
+  }, []);
+
+  const handleStartInterview = async (data: ResumeJobInterviewData): Promise<void> => {
     try {
       setIsLoading(true);
       setError(null);
@@ -41,8 +61,6 @@ export default function ResumeJobInterviewPage() {
       const interviewData = await response.json();
       
       // Navigate to the interview session
-      // You might want to save the interview data in localStorage or context
-      // before navigating if needed
       localStorage.setItem('resumeJobInterview', JSON.stringify({
         questions: interviewData.questions,
         resumeData: {
@@ -71,7 +89,15 @@ export default function ResumeJobInterviewPage() {
       </div>
 
       <div className="bg-white rounded-lg shadow p-6">
-        <ResumeJobInterviewForm userId="user123" userName="User" />
+        {user ? (
+          <ResumeJobInterviewForm userId={user.id} userName={user.name} />
+        ) : error ? (
+          <div className="text-red-500">{error}</div>
+        ) : (
+          <div className="flex justify-center p-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+          </div>
+        )}
       </div>
     </div>
   );
