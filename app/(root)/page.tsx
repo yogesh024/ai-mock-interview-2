@@ -200,7 +200,9 @@ async function Home() {
 
         <div className="interviews-section">
           {hasUpcomingInterviews ? (
-            allInterview?.map((interview) => (
+            allInterview?
+      .slice(0, 6) // Take only the top 6 interviews
+      .map((interview) => (
               <InterviewCard
                 key={interview.id}
                 userId={user?.id}
