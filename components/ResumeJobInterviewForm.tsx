@@ -84,14 +84,15 @@ export default function ResumeJobInterviewForm({ userId, userName }: ResumeJobIn
       
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-gray-50 p-4 rounded-lg">
+          <div className="bg-gray-50 p-4 rounded-lg ">
             <label className="block mb-2 text-lg font-medium text-gray-800">Target Role</label>
             <input
               type="text"
               value={role}
               onChange={(e) => setRole(e.target.value)}
               placeholder="e.g. Frontend Developer"
-              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+              className="w-full p-3 border
+              bg-gray-500 border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
             />
             <p className="mt-1 text-sm text-gray-600">If left blank, we'll extract the role from the job description</p>
           </div>
@@ -101,7 +102,8 @@ export default function ResumeJobInterviewForm({ userId, userName }: ResumeJobIn
             <select
               value={level}
               onChange={(e) => setLevel(e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+              className="w-full p-3 border 
+              bg-gray-500 border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
             >
               <option value="junior">Junior</option>
               <option value="mid">Mid-level</option>
@@ -119,7 +121,8 @@ export default function ResumeJobInterviewForm({ userId, userName }: ResumeJobIn
             <select
               value={type}
               onChange={(e) => setType(e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+              className="w-full p-3 border
+              bg-gray-500 border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
             >
               <option value="technical">Technical</option>
               <option value="behavioral">Behavioral</option>
@@ -136,7 +139,8 @@ export default function ResumeJobInterviewForm({ userId, userName }: ResumeJobIn
               max="10"
               value={amount}
               onChange={(e) => setAmount(parseInt(e.target.value) || 5)}
-              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+              className="w-full p-3 border 
+              bg-gray-500 border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
             />
             <p className="mt-1 text-sm text-gray-600">Select between 3-10 questions</p>
           </div>
@@ -149,7 +153,8 @@ export default function ResumeJobInterviewForm({ userId, userName }: ResumeJobIn
             value={resume}
             onChange={(e) => setResume(e.target.value)}
             placeholder="Paste your resume text here..."
-            className="w-full p-4 border border-gray-300 rounded-md h-64 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-gray-800"
+            className="w-full p-4 border 
+             bg-gray-500 border-gray-300 rounded-md h-64 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-gray-800"
             required
           />
           <p className="mt-2 text-sm text-gray-500">Required - The AI will analyze your skills and experience</p>
@@ -162,7 +167,8 @@ export default function ResumeJobInterviewForm({ userId, userName }: ResumeJobIn
             value={jobDescription}
             onChange={(e) => setJobDescription(e.target.value)}
             placeholder="Paste the job description here..."
-            className="w-full p-4 border border-gray-300 rounded-md h-64 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-gray-800"
+            className="w-full p-4 border 
+            bg-gray-500 border-gray-300 rounded-md h-64 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-gray-800"
             required
           />
           <p className="mt-2 text-sm text-gray-500">Required - The AI will identify key requirements and generate relevant questions</p>
